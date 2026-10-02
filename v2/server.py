@@ -18,7 +18,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from fastapi import Body, FastAPI, File, HTTPException, UploadFile
+from fastapi import Body, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from subtitle_formats import write_ass as write_styled_ass, write_srt as write_srt_file, write_vtt
@@ -48,6 +48,7 @@ logger.info("Caption Forge session started")
 
 app = FastAPI(title="Caption Forge", version="2.2.0")
 app.mount("/assets", StaticFiles(directory=ROOT / "assets"), name="assets")
+INSTANCE_ID = uuid.uuid4().hex
 
 lock = threading.Lock()
 _DUB_LOCK = threading.Lock()
@@ -356,7 +357,32 @@ def transcription_worker(job_id: str, video_path: Path, language: str | None, wo
         update(job, status="error", stage="Transcription stopped", detail=detail, eta=None)
 
 @app.get("/api/health")
-def health() -> dict[str, Any]: return {"ok": True, "ffmpeg": ffmpeg_present(), "cuda": _cuda_available(), "cuda_devices": cuda_device_count(), "gpu_vram_gb": gpu_memory_gb(), "log_file": str(LOG_FILE), "models": list(model_cache)}
+def health() -> dict[str, Any]: return {"ok": True, "service": "caption-forge-v2", "instance_id": INSTANCE_ID, "ffmpeg": ffmpeg_present(), "cuda": _cuda_available(), "cuda_devices": cuda_device_count(), "gpu_vram_gb": gpu_memory_gb(), "log_file": str(LOG_FILE), "models": list(model_cache)}
+
+@app.post("/api/quit")
+def quit_studio(request: Request) -> dict[str, str]:
+    client = request.client.host if request.client else ""
+    if client not in {"127.0.0.1", "::1", "localhost"}:
+        raise HTTPException(403, "Quit is available only from this computer")
+    host = request.headers.get("host", "").lower()
+    origin = request.headers.get("origin")
+    if origin and origin.lower() != f"http://{host}":
+        raise HTTPException(403, "Quit request must come from this Caption Forge page")
+
+    runner = getattr(app.state, "uvicorn_server", None)
+    def stop_server() -> None:
+        if runner is not None:
+            runner.should_exit = True
+        else:
+            # Also support sessions started directly with `uvicorn server:app`.
+            import os
+            import signal
+            os.kill(os.getpid(), signal.SIGINT)
+    timer = threading.Timer(0.35, stop_server)
+    timer.daemon = True
+    timer.start()
+    logger.info("Studio quit requested from loopback; server shutdown scheduled")
+    return {"status": "stopping", "instance_id": INSTANCE_ID}
 
 @app.get("/api/languages")
 def speech_languages() -> dict[str, Any]:

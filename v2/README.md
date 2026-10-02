@@ -7,6 +7,7 @@ Caption Forge V2 is an offline-first subtitle editor. Video stays on this machin
 1. Install Python 3.10 or newer.
 2. Double-click `start.bat`.
 3. The launcher creates `.venv`, installs dependencies, and opens the local studio at `http://127.0.0.1:8878` (V1 continues to use port 8787).
+4. Use **Quit** in the studio header to stop the local server, wait until its health endpoint stops responding, and leave the browser on a blank page. Unsaved edits and active jobs are discarded.
 4. First launch selects a Whisper model from detected NVIDIA VRAM. Model downloads are cached by Faster-Whisper.
 
 For compact offline translation, choose Argos and download the selected language pair once. For more natural, context-aware phrasing, install [Ollama](https://ollama.com/download), leave its local service running, then choose **Natural language · local LLM** and download Qwen 3.5 4B from the translation panel. Caption text goes to the local Ollama service at `127.0.0.1` only. Translation should still be proofread for names, idioms, and context.
@@ -49,7 +50,7 @@ The reachable `/api/health` and `/api/whisper/check` endpoints report detected V
 - `effects.js`, `app.js` — live subtitle customization and editor interactions.
 - `effect-catalog.js` — the 90 motion/emphasis combinations.
 - `index.html`, `styles.css`, `v2-design.css`, `liquid-glass.css` — editor interface, glass materials and responsive styling.
-- `start.bat`, `requirements.txt` — Windows setup.
+- `start.bat`, `run_studio.py`, `requirements.txt` — Windows setup and graceful server shutdown.
 - `V2_NOTES.md` — V1 audit, model research, and remaining work.
 - `DESIGN.md` — V2 visual system and motion rules.
 - `assets/gsap.min.js` — locally bundled GSAP core for offline-safe interface motion.

@@ -18,8 +18,5 @@ if errorlevel 1 (
 )
 
 echo [Caption Forge] Starting local studio at http://127.0.0.1:8878
-start "Caption Forge Server" /b ".venv\Scripts\python.exe" -m uvicorn server:app --host 127.0.0.1 --port 8878 --log-level warning --no-access-log
-timeout /t 2 /nobreak >nul
-start "" http://127.0.0.1:8878
-echo Studio is running. Keep this window open while editing.
-pause
+".venv\Scripts\python.exe" run_studio.py
+echo [Caption Forge] Studio server stopped.
