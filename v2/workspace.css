@@ -70,6 +70,11 @@ input:focus,textarea:focus,select:focus,.search:focus-within { border-color:#9bd
 .bar { background:#9bdcf46b; border-left-color:#9bdcf4; }
 .bar.active { background:linear-gradient(90deg,#9bdcf4,#c5e6f5); }
 header button,header select { white-space:nowrap; }
+.header-actions { align-items:center; gap:8px; }
+.header-actions > button:not([hidden]),.header-actions > select:not([hidden]) { box-sizing:border-box; height:38px; min-height:38px; margin:0; line-height:1; vertical-align:middle; }
+.header-actions > button:not([hidden]) { display:inline-flex; align-items:center; justify-content:center; }
+.header-actions > #subtitleExportFormat { padding-block:0; }
+.header-actions :is(button,select):focus-visible { outline:2px solid #a9e7fa; outline-offset:0; box-shadow:none; }
 .toast,dialog,.delivery-center { background:#2a2c2eee; color:#f1f2f3; border-color:#ffffff2b; }
 .effect-gallery { width:min(1040px,calc(100vw - 36px)); max-height:min(790px,calc(100dvh - 36px)); background:#27292bf5; border-color:#ffffff2b; border-radius:20px; }
 .gallery-head { padding:21px 23px 16px; border-bottom:1px solid #ffffff18; }
