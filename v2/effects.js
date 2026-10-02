@@ -5,6 +5,48 @@
   const style = state.style;
   Object.assign(style, { effect: 'static', highlight: '#ffbf69', outlineColor: '#10131b', outlineWidth: 2, shadow: 6, radius: 8, letterSpacing: 0, speed: 'balanced', wordsPerBeat: 5, emphasis: 'color' });
   const inspector = $('.inspector');
+  const look = style.videoLook ||= { exposure: 0, contrast: 1, saturation: 1, warmth: 0, shadows: 0, midtones: 0, highlights: 0, sharpness: 0, vignette: 0, flipX: false, flipY: false };
+  const videoPanel = document.createElement('section');
+  videoPanel.className = 'video-look-panel'; videoPanel.id = 'videoLookPanel';
+  videoPanel.innerHTML = `<h2>Video look</h2><p class="motion-note">Shape the picture while you edit. These settings carry into Burn captions to MP4.</p>
+    <fieldset><legend>Light</legend><label>Exposure <output id="lookExposureValue">0</output><input type="range" min="-2" max="2" step="0.1" value="0" data-look="exposure"></label><label>Contrast <output id="lookContrastValue">100%</output><input type="range" min="50" max="150" step="1" value="100" data-look="contrast"></label></fieldset>
+    <fieldset><legend>Color</legend><label>Saturation <output id="lookSaturationValue">100%</output><input type="range" min="0" max="200" step="1" value="100" data-look="saturation"></label><label>Temperature <output id="lookWarmthValue">0</output><input type="range" min="-100" max="100" step="1" value="0" data-look="warmth"></label></fieldset>
+    <fieldset><legend>Color grading</legend><p class="look-hint">Shift tone separately in the shadows, midtones, and highlights.</p><label>Shadows <output id="lookShadowsValue">Neutral</output><input type="range" min="-100" max="100" step="1" value="0" data-look="shadows"></label><label>Midtones <output id="lookMidtonesValue">Neutral</output><input type="range" min="-100" max="100" step="1" value="0" data-look="midtones"></label><label>Highlights <output id="lookHighlightsValue">Neutral</output><input type="range" min="-100" max="100" step="1" value="0" data-look="highlights"></label></fieldset>
+    <fieldset><legend>Detail &amp; optics</legend><label>Sharpen <output id="lookSharpnessValue">0</output><input type="range" min="0" max="100" step="1" value="0" data-look="sharpness"></label><label>Vignette <output id="lookVignetteValue">0</output><input type="range" min="0" max="100" step="1" value="0" data-look="vignette"></label></fieldset>
+    <fieldset><legend>Geometry</legend><div class="look-flips"><label><input type="checkbox" data-look="flipX"> Mirror horizontally</label><label><input type="checkbox" data-look="flipY"> Mirror vertically</label></div></fieldset>
+    <button type="button" class="wide ghost" id="resetVideoLook">Reset video adjustments</button>`;
+  const appearancePanel = [...inspector.children].find(section => section.querySelector('h2')?.textContent.trim() === 'Appearance');
+  inspector.insertBefore(videoPanel, appearancePanel || inspector.children[1] || null);
+  const video = $('#video');
+  const videoLookOverlay = document.createElement('div');
+  videoLookOverlay.className = 'video-look-overlay'; videoLookOverlay.setAttribute('aria-hidden', 'true');
+  $('#safeArea').before(videoLookOverlay);
+  const paintVideoLook = () => {
+    for (const key of ['exposure','contrast','saturation','warmth','shadows','midtones','highlights','sharpness','vignette']) {
+      const input = videoPanel.querySelector(`[data-look="${key}"]`), output = $(`#look${key[0].toUpperCase()+key.slice(1)}Value`);
+      if (!input || !output) continue;
+      const value = Number(input.value); look[key] = key === 'contrast' || key === 'saturation' ? value / 100 : value;
+      output.textContent = key === 'contrast' || key === 'saturation' ? `${value}%` : key === 'exposure' ? `${value > 0 ? '+' : ''}${value.toFixed(1)} EV` : ['shadows','midtones','highlights'].includes(key) ? (value === 0 ? 'Neutral' : `${value > 0 ? 'Warm' : 'Cool'} ${Math.abs(value)}`) : String(value);
+    }
+    look.flipX = videoPanel.querySelector('[data-look="flipX"]').checked;
+    look.flipY = videoPanel.querySelector('[data-look="flipY"]').checked;
+    const exposure = Math.pow(2, Number(look.exposure) || 0), sharpness = Number(look.sharpness) || 0;
+    video.style.filter = `brightness(${exposure}) contrast(${look.contrast * (1 + sharpness / 800)}) saturate(${look.saturation}) sepia(${Math.max(0, Number(look.warmth)) / 750}) hue-rotate(${Math.min(0, Number(look.warmth)) * .12}deg)`;
+    video.style.transform = `scale(${look.flipX ? -1 : 1},${look.flipY ? -1 : 1})`;
+    const tint = (value, positive, negative) => { const amount=Math.min(1,Math.abs(Number(value)||0)/100*.22); return value===0?'transparent':`${value>0?positive:negative}${amount})`; };
+    const warm='rgba(255,150,75,', cool='rgba(80,145,255,';
+    const shadow=tint(look.shadows,warm,cool), mid=tint(look.midtones,warm,cool), high=tint(look.highlights,warm,cool);
+    const edgeAlpha=Math.min(.72,(Number(look.vignette)||0)/100*.72);
+    videoLookOverlay.style.background = `radial-gradient(ellipse at center, transparent ${Math.max(18,70-(Number(look.vignette)||0)*.38)}%, rgba(0,0,0,${edgeAlpha}) 100%), radial-gradient(ellipse 120% 110% at 50% 50%, ${mid}, transparent 75%), radial-gradient(ellipse 90% 100% at 8% 92%, ${shadow}, transparent 72%), radial-gradient(ellipse 90% 100% at 92% 8%, ${high}, transparent 72%)`;
+    videoLookOverlay.style.mixBlendMode = 'soft-light';
+  };
+  videoPanel.querySelectorAll('[data-look]').forEach(input => input.addEventListener('input', paintVideoLook));
+  videoPanel.querySelector('#resetVideoLook').addEventListener('click', () => {
+    Object.assign(look, { exposure:0, contrast:1, saturation:1, warmth:0, shadows:0, midtones:0, highlights:0, sharpness:0, vignette:0, flipX:false, flipY:false });
+    videoPanel.querySelectorAll('[data-look]').forEach(input => { input.checked = false; if (input.type !== 'checkbox') input.value = input.dataset.look === 'contrast' || input.dataset.look === 'saturation' ? '100' : '0'; });
+    paintVideoLook();
+  });
+  paintVideoLook();
   const audioPanel = document.createElement('section');
   audioPanel.className = 'audio-panel'; audioPanel.id = 'audioPanel';
   audioPanel.innerHTML = `<h2>Dub your captions</h2><p class="motion-note">Generate a locally voiced track from the caption text. Translate into the target language first for a full-language dub. The new video replaces source audio with speech only; original music and ambience are not retained. Your source file stays untouched.</p><label>Speech model<select id="dubModel"><option value="chatterbox-multilingual-v3">Chatterbox Multilingual V3 · 23 languages</option></select></label><label>Dub language<select id="dubLanguage"><option value="de">German</option><option value="en">English</option><option value="es">Spanish</option><option value="fr">French</option><option value="it">Italian</option><option value="pt">Portuguese</option><option value="zh">Chinese</option><option value="ja">Japanese</option><option value="ko">Korean</option><option value="ar">Arabic</option><option value="hi">Hindi</option><option value="nl">Dutch</option><option value="pl">Polish</option><option value="ru">Russian</option><option value="sv">Swedish</option><option value="da">Danish</option><option value="fi">Finnish</option><option value="el">Greek</option><option value="he">Hebrew</option><option value="ms">Malay</option><option value="no">Norwegian</option><option value="sw">Swahili</option><option value="tr">Turkish</option></select></label><label>Voice reference <input id="voiceReference" type="file" accept="audio/wav,audio/mpeg,audio/mp4,audio/flac,audio/ogg"><small>Optional · use a voice clip you have permission to reproduce.</small></label><button type="button" id="generateDub" class="wide action">Generate dubbed video</button><p id="audioModelStatus" class="motion-note" aria-live="polite">Checking optional local voice runtime…</p><div id="dubProgress" class="dub-progress" hidden><span id="dubStage">Preparing local dub</span><span id="dubPercent">0%</span><i><b id="dubProgressFill"></b></i></div><p class="audio-caveat">Generated speech starts at each caption's time. Listen through and adjust any lines that overlap or sound rushed.</p>`;
@@ -12,6 +54,7 @@
   const dubbingWorkspace = $('#dubbingWorkspace');
   dubbingWorkspace?.addEventListener('click', () => {
     if (window.matchMedia('(max-width: 940px)').matches) { inspector.classList.add('v2-open'); inspectorToggle.setAttribute('aria-expanded', 'true'); }
+    expandSection(audioPanel);
     audioPanel.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
     $('#generateDub').focus({ preventScroll: true });
   });
@@ -104,6 +147,34 @@
   const modelPanel = $('#modelPanel');
   inspector.insertBefore(translation, modelPanel || inspector.children[1] || null);
   $('#translateTarget').addEventListener('change', event => { if (!dubLanguageWasPicked) $('#dubLanguage').value = event.target.value; });
+
+  function foldSection(section, expanded = false) {
+    if (!section || section.classList.contains('job-panel') || section.dataset.foldReady) return;
+    const heading = section.querySelector(':scope > h2');
+    if (!heading) return;
+    const title = heading.textContent.trim();
+    const content = document.createElement('div'); content.className = 'section-fold-content';
+    for (const child of [...section.children]) if (child !== heading) content.append(child);
+    const toggle = document.createElement('button'); toggle.type = 'button'; toggle.className = 'section-fold-toggle';
+    toggle.textContent = title; toggle.setAttribute('aria-expanded', String(expanded));
+    toggle.setAttribute('aria-label', `${expanded ? 'Collapse' : 'Expand'} ${title}`);
+    section.replaceChildren(toggle, content); section.dataset.foldReady = 'true';
+    section.classList.toggle('is-collapsed', !expanded);
+    toggle.addEventListener('click', () => {
+      const open = section.classList.toggle('is-collapsed') === false;
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', `${open ? 'Collapse' : 'Expand'} ${title}`);
+    });
+  }
+  const foldSections = () => [...inspector.children].forEach((section, index) => foldSection(section, ['Selected caption','Video look'].includes(section.querySelector(':scope > h2')?.textContent.trim())));
+  foldSections();
+  new MutationObserver(foldSections).observe(inspector, { childList: true });
+  function expandSection(section) {
+    const toggle = section?.querySelector(':scope > .section-fold-toggle');
+    if (!toggle) return;
+    section.classList.remove('is-collapsed'); toggle.setAttribute('aria-expanded','true');
+    toggle.setAttribute('aria-label',`Collapse ${toggle.textContent}`);
+  }
 
   let lastPreviewId = null;
   const setRange = (id, key, output, suffix = '') => {
@@ -358,4 +429,3 @@
     } catch {}
   }, 1100);
 })();
-

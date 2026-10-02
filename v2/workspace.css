@@ -34,7 +34,11 @@ header { background:#252729d9; border-bottom-color:#ffffff21; box-shadow:inset 0
 .pane-head,.inspector section { border-color:#ffffff18; }
 .pane-head b,h2 { color:#d6dade; }
 label { color:#c2c6c9; }
-input,textarea,select,.search { color:#f1f2f3; background:#17191bd9; border-color:#ffffff26; }
+input,textarea,select,.search { color:#f1f2f3; background:#373a3d; border-color:#ffffff40; }
+select { background-color:#373a3d; }
+.inspector input:not([type="range"]),.inspector textarea,.inspector select,.captions select,.header-actions #subtitleExportFormat,.video-look-panel select { color:#f1f2f3; background:#373a3d; border-color:#ffffff40; }
+.inspector select option,.captions select option,.header-actions #subtitleExportFormat option { color:#f1f2f3; background:#373a3d; }
+input[type=range] { background:transparent; border-color:transparent; box-shadow:none; padding-inline:0; }
 input::placeholder,textarea::placeholder { color:#adb2b7; }
 input:focus,textarea:focus,select:focus,.search:focus-within { border-color:#9bdcf4; box-shadow:0 0 0 3px #9bdcf41c; }
 .search { background:#191b1d; }
@@ -52,6 +56,10 @@ input:focus,textarea:focus,select:focus,.search:focus-within { border-color:#9bd
 .motion-note,.translation-panel .motion-note { color:#bdc1c5; }
 .stage { background:radial-gradient(ellipse at 50% 42%,#3a3d40,#26282a 48%,#1c1d1f 83%); border-color:#ffffff26; box-shadow:inset 0 1px #ffffff10,0 22px 50px #0004; }
 .stage::after { background:radial-gradient(ellipse at center,transparent 48%,#11121468); }
+.video-look-overlay { position:absolute; inset:0; z-index:2; pointer-events:none; }
+.stage video { z-index:1; }
+.safe { z-index:3; }
+.stage-tip { z-index:4; }
 .safe { border-color:#9bdcf4a6; }
 .safe i { background:var(--coral); }
 .stage-tip { background:#181a1be8; color:#e1e4e6; border:1px solid #ffffff20; }
@@ -98,6 +106,26 @@ header button,header select { white-space:nowrap; }
 .effect-preview .action { width:100%; min-height:39px; margin-top:7px; }
 .effect-preview .action:disabled { opacity:.45; cursor:not-allowed; }
 .effect-preview .apply-note { margin-bottom:0; font-size:10px; }
+.inspector section { padding:0; border-bottom-color:#ffffff19; }
+.section-fold-toggle { position:relative; width:100%; min-height:47px; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 17px; border:0; background:transparent; color:#d6dade; font:700 10px system-ui,sans-serif; letter-spacing:.075em; text-align:left; text-transform:uppercase; cursor:pointer; }
+.section-fold-toggle::after { content:""; width:7px; height:7px; flex:none; border-right:1.5px solid #a9e4f8; border-bottom:1.5px solid #a9e4f8; transform:rotate(45deg); transition:transform .2s ease; }
+.section-fold-toggle[aria-expanded="true"]::after { transform:rotate(225deg); }
+.section-fold-toggle:hover { background:#ffffff06; color:#fff; }
+.section-fold-content { padding:0 16px 16px; }
+.is-collapsed .section-fold-content { display:none; }
+.is-collapsed .section-fold-toggle { min-height:46px; }
+.section-fold-content h2 { margin:0 0 12px; }
+.video-look-panel .section-fold-content { padding-top:2px; }
+.video-look-panel fieldset { min-width:0; margin:0; padding:13px 0 2px; border:0; border-top:1px solid #ffffff16; }
+.video-look-panel legend { padding:0; color:#d6dade; font-size:11px; font-weight:700; }
+.video-look-panel label { margin-top:10px; }
+.video-look-panel output { color:#bce9f8; font-size:10px; }
+.look-hint { margin:6px 0 9px; color:#b9bec2; font-size:10px; line-height:1.45; }
+.look-flips { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding-top:8px; }
+.look-flips label { display:flex; align-items:center; gap:7px; margin:0; }
+.look-flips input { width:16px; height:16px; margin:0; accent-color:#9bdcf4; }
+#resetVideoLook { margin-top:12px; }
+.inspector .section-fold-toggle:focus-visible { outline:2px solid #a9e7fa; outline-offset:-3px; }
 @keyframes preview-pulse { to { color:#fff; text-shadow:0 0 18px #9bdcf4; } }
 @keyframes preview-pop { to { transform:scale(1.09); } }
 @keyframes preview-rise { to { transform:translateY(-4px); } }
@@ -128,4 +156,3 @@ header button,header select { white-space:nowrap; }
 }
 @media(prefers-reduced-motion:reduce) { #effectPreviewText { animation:none!important; } }
 @media(prefers-reduced-transparency:reduce) { header,.inspector,.effect-gallery,.toast,.delivery-center { -webkit-backdrop-filter:none; backdrop-filter:none; } header { background:#252729; } }
-

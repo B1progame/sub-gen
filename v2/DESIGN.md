@@ -10,6 +10,8 @@ The desktop workspace places timed, searchable captions and transcription contro
 
 At widths below 940px, the inspector becomes a fixed slide-in panel opened by the Style & motion control or Dub audio entry point. Below 650px, the header and stage tighten, the inspector and effect gallery use viewport-bounded widths, the gallery changes to two columns, and transcription remains directly available below the caption list. Subtitle editing and dubbing remain reachable from the same workspace.
 
+Inspector sections are keyboard-operable foldouts. Keep caption text and Video Look open by default; model, translation, dubbing, appearance, motion, placement, and delivery panels can be opened when needed. Video Look exposes Light, Color, Color grading, Detail & Optics, and Geometry adjustments, previews them on the canvas, and sends the same values to the local burned-video renderer.
+
 ## Surfaces, type, and motion
 
 - Use charcoal gradients for the page and graphite work panels. The video stage has a subtle radial light and vignette; caption selection and transport use restrained ice blue.
@@ -27,4 +29,3 @@ Keyboard focus has a visible cyan outline, native controls inherit a dark color 
 Implemented: local video/caption editing, transcription, caption styling and motion, translation controls, local dubbing controls, SRT import/export, and a delivery flow for caption files or a burned MP4. Dubbing is surfaced as an inspector section reached from the header; translation and dubbing remain distinct operations. Playback and caption selection share the same preview and timing context.
 
 Product direction: keep subtitle and dubbing workflows equally prominent and coherent across desktop and phone-sized screens, with the inspector adapting as a mobile sheet. Treat any additional localization or delivery concepts as aspirations until present in the interface and backed by working behavior. The direction contract in `index.html` is the north star; this document describes the current implementation where it is concrete.
-

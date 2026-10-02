@@ -229,6 +229,49 @@ def write_ass(captions: list[dict[str, Any]], style: dict[str, Any], path: Path)
         events.append(f"Dialogue: 0,{ass_stamp(float(c['start']))},{ass_stamp(float(c['end']))},Caption,,0,0,0,,{text}")
     path.write_text(header + "\n".join(events) + "\n", encoding="utf-8-sig")
 
+def video_look_filters(style: dict[str, Any]) -> list[str]:
+    raw = style.get("videoLook")
+    if not isinstance(raw, dict):
+        return []
+    def value(key: str, fallback: float, low: float, high: float) -> float:
+        try:
+            return max(low, min(high, float(raw.get(key, fallback))))
+        except (TypeError, ValueError):
+            return fallback
+    exposure = value("exposure", 0, -2, 2)
+    contrast = value("contrast", 1, .5, 1.5)
+    saturation = value("saturation", 1, 0, 2)
+    warmth = value("warmth", 0, -100, 100) / 100 * .18
+    shadows = value("shadows", 0, -100, 100) / 100 * .18
+    midtones = value("midtones", 0, -100, 100) / 100 * .18
+    highlights = value("highlights", 0, -100, 100) / 100 * .18
+    sharpness = value("sharpness", 0, 0, 100) / 100 * 1.5
+    vignette = value("vignette", 0, 0, 100)
+    filters: list[str] = []
+    if exposure:
+        filters.append(f"exposure=exposure={exposure:.3f}")
+    if contrast != 1 or saturation != 1:
+        filters.append(f"eq=contrast={contrast:.3f}:saturation={saturation:.3f}")
+    if any((warmth, shadows, midtones, highlights)):
+        red_s = warmth + shadows
+        red_m = warmth + midtones
+        red_h = warmth + highlights
+        filters.append("colorbalance=" + ":".join((
+            f"rs={red_s:.3f}", f"bs={-red_s:.3f}",
+            f"rm={red_m:.3f}", f"bm={-red_m:.3f}",
+            f"rh={red_h:.3f}", f"bh={-red_h:.3f}",
+        )))
+    if sharpness:
+        filters.append(f"unsharp=5:5:{sharpness:.3f}:5:5:0")
+    if vignette:
+        filters.append(f"vignette=angle=PI*{vignette / 400:.4f}")
+    if raw.get("flipX") is True:
+        filters.append("hflip")
+    if raw.get("flipY") is True:
+        filters.append("vflip")
+    return filters
+
+
 def burn_worker(job_id: str, video_path: Path, captions: list[dict[str, Any]], style: dict[str, Any]) -> None:
     job = jobs[job_id]
     try:
@@ -237,8 +280,11 @@ def burn_worker(job_id: str, video_path: Path, captions: list[dict[str, Any]], s
         ass_path = OUTPUTS / f"{job_id}.ass"; output = OUTPUTS / f"{job_id}.mp4"; write_styled_ass(captions, style, ass_path)
         update(job, status="working", progress=10, stage="Preparing burn-in render", eta="calculating…")
         subtitle_filter_path = ass_path.resolve().as_posix().replace(":", r"\:").replace("'", r"\'")
+        render_filters = video_look_filters(style)
+        render_filters.append(f"ass=filename='{subtitle_filter_path}'")
+        video_filter = ",".join(render_filters)
         with tempfile.TemporaryFile() as error_log:
-            process = subprocess.Popen([binary, "-y", "-i", str(video_path), "-vf", f"ass=filename='{subtitle_filter_path}'", "-c:a", "copy", "-movflags", "+faststart", str(output)], stdout=subprocess.DEVNULL, stderr=error_log)
+            process = subprocess.Popen([binary, "-y", "-i", str(video_path), "-vf", video_filter, "-c:a", "copy", "-movflags", "+faststart", str(output)], stdout=subprocess.DEVNULL, stderr=error_log)
             started = time.monotonic()
             while process.poll() is None:
                 if time.monotonic() - started > 60 * 60:
