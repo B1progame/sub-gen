@@ -97,6 +97,18 @@ WHISPER_LANGUAGE_NAMES = {
 def update(target: dict[str, Any], **values: Any) -> None:
     with lock: target.update(values)
 
+def model_download_error(exc: Exception) -> str:
+    """Turn common model-fetch failures into a useful, safe UI message."""
+    detail = f"{type(exc).__name__}: {exc}".lower()
+    if "winerror 10013" in detail or "socket access" in detail:
+        return ("Windows denied the outbound connection to Hugging Face (WinError 10013). "
+                "Check the firewall, proxy, or network policy for the Python process, then retry. "
+                "No model files were downloaded.")
+    if any(marker in detail for marker in ("connecterror", "connection refused", "name or service not known", "temporary failure in name resolution", "timed out")):
+        return ("Could not connect to Hugging Face to fetch the model. Check your internet or proxy settings, "
+                "then retry. No model files were downloaded.")
+    return f"Model download failed ({type(exc).__name__}). Open Session log for details, then retry."
+
 def ffmpeg_present() -> bool:
     return ffmpeg_executable() is not None
 
@@ -183,7 +195,7 @@ def model_download_worker(model_name: str) -> None:
         logger.info("Downloaded Whisper model: %s", model_name)
     except Exception as exc:
         logger.exception("Model download failed: %s", model_name)
-        update(job, status="error", progress=0, stage="Download failed", detail=str(exc))
+        update(job, status="error", progress=0, stage="Download failed", detail=model_download_error(exc))
 
 def _cuda_available() -> bool:
     try:

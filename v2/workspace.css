@@ -48,6 +48,9 @@ input:focus,textarea:focus,select:focus,.search:focus-within { border-color:#9bd
 .time,output { color:#a9e4f8; }
 .motion-lab,.translation-panel,.audio-panel { background:#252729; border-left:0!important; }
 .model-panel,.delivery-panel { background:#252729; }
+.whisper-status { line-height:1.5; overflow-wrap:anywhere; }
+.whisper-status.warn { color:#ffd18a; }
+.model-download:disabled { opacity:.58; }
 .pane-head,.caption-foot { background:#242628; }
 .delivery-secondary,.header-actions #subtitleExportFormat { background:#1b1d1f; border-color:#ffffff27; color:#e8eaec; }
 .motion-lab h2 { color:#c4def3; }
