@@ -161,3 +161,54 @@ header button,header select { white-space:nowrap; }
 }
 @media(prefers-reduced-motion:reduce) { #effectPreviewText { animation:none!important; } }
 @media(prefers-reduced-transparency:reduce) { header,.inspector,.effect-gallery,.toast,.delivery-center { -webkit-backdrop-filter:none; backdrop-filter:none; } header { background:#252729; } }
+/* Motion and browser surfaces: fast feedback, deliberate entrances, and readable glass. */
+:root { --ease-enter:cubic-bezier(.16,1,.3,1); --duration-quick:120ms; --duration-standard:220ms; --duration-panel:340ms; --glass-surface:rgba(37,39,41,.88); --glass-line:#ffffff2c; --motion:#a9c9ee; }
+button { transition-duration:var(--duration-quick); }
+button:active { transform:scale(.985); }
+::selection { color:#11191d; background:#9bdcf4; }
+input,textarea { caret-color:var(--signal); }
+::-webkit-scrollbar { width:10px; height:10px; }
+::-webkit-scrollbar-track { background:#202224; }
+::-webkit-scrollbar-thumb { border:2px solid #202224; border-radius:9px; background:#555a5e; }
+::-webkit-scrollbar-thumb:hover { background:#73797e; }
+.inspector { scrollbar-color:#555a5e #202224; }
+.section-fold-toggle::after { transition:transform var(--duration-standard) var(--ease-enter); }
+.section-fold-toggle:active { transform:none; }
+.safe { touch-action:none; }
+.stage-tip { transition:opacity var(--duration-quick) ease; }
+.motion-lab { border-left:0!important; background:#252729; }
+.motion-lab h2 { color:#c4def3; }
+.effect-presets button:focus-visible { border-color:var(--focus); color:#fff; background:#9bdcf414; }
+.inspector .section-fold-toggle:focus-visible { outline-offset:-3px!important; }
+@media(max-width:940px) {
+  .inspector { background:var(--glass-surface); border-left:1px solid var(--glass-line); -webkit-backdrop-filter:saturate(145%) blur(26px); backdrop-filter:saturate(145%) blur(26px); transition:none!important; }
+}
+@media(prefers-reduced-transparency:reduce) {
+  header,.inspector,.effect-gallery,#exportSheet .export-scrim,#exportSheet .export-card,.toast,.delivery-center { -webkit-backdrop-filter:none!important; backdrop-filter:none!important; }
+  header { background:#252729; }
+}
+@media(max-width:940px) and (prefers-reduced-transparency:reduce) { .inspector { background:#252729; } }
+#exportSheet .export-scrim { background:#080a0dbd; -webkit-backdrop-filter:blur(14px) saturate(120%); backdrop-filter:blur(14px) saturate(120%); }
+#exportSheet .export-card { border:1px solid #ffffff27; border-radius:18px; background:linear-gradient(145deg,#3a3d40f2,#292b2df5 58%,#222426f7); -webkit-backdrop-filter:blur(28px) saturate(150%); backdrop-filter:blur(28px) saturate(150%); box-shadow:inset 0 1px #ffffff20,0 24px 64px #0008; }
+#exportSheet .export-close { border-color:#ffffff30; border-radius:9px; background:#ffffff0b; color:#e6e8e9; }
+#exportSheet .export-close:hover { border-color:#9bdcf477; background:#9bdcf414; color:#fff; }
+#exportSheet .export-kicker { color:#9bdcf4; letter-spacing:.12em; }
+#exportSheet .export-card h1 { letter-spacing:-.025em; }
+#exportSheet .export-intro { color:#c5c9cc; }
+#exportSheet .export-choice { min-height:150px; padding:17px; border-color:#ffffff21; border-radius:12px; background:#ffffff06; color:#f1f2f3; transition:background var(--duration-quick) ease,border-color var(--duration-quick) ease,transform var(--duration-quick) ease; }
+#exportSheet .export-choice:hover { transform:translateY(-1px); border-color:#9bdcf46b; background:#9bdcf40c; }
+#exportSheet .export-choice.active { border-color:#9bdcf4a6; background:#9bdcf414; box-shadow:inset 0 1px #ffffff16; }
+#exportSheet .export-choice.active:after { background:#9bdcf4; color:#142027; }
+#exportSheet .export-choice span { color:#c0c5c9; }
+#exportSheet .export-choice em { color:#a9dff0; }
+#exportSheet .export-summary { border-color:#ffffff20; border-radius:10px; background:#ffffff07; color:#c0c5c9; }
+#exportSheet .export-summary strong { color:#f1f2f3; }
+#exportSheet .export-confirm { border:1px solid #9bdcf4; border-radius:9px; background:linear-gradient(145deg,#b5eafa,#8bcde9); color:#101a1f; box-shadow:inset 0 1px #ffffffa8,0 4px 16px #74cce522; }
+#exportSheet .export-confirm:hover { background:#c7f2ff; }
+#exportSheet .export-cancel { border-color:#ffffff30; border-radius:9px; color:#e4e7e9; }
+#exportSheet .export-fine { color:#c0c5c9; }
+#exportSheet .export-render { border-color:#9bdcf44a; border-radius:11px; background:#9bdcf40d; }
+#exportSheet .export-render-top span:last-child { color:#b8e8f5; }
+#exportSheet .export-rail { background:#ffffff16; }
+#exportSheet .export-rail i { background:linear-gradient(90deg,#9bdcf4,#d0f2fb); }
+@media(prefers-reduced-motion:reduce) { button:active { transform:none; } #exportSheet .export-choice:hover { transform:none; } }

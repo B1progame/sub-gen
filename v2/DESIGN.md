@@ -17,7 +17,7 @@ Inspector sections are keyboard-operable foldouts. Keep caption text and Video L
 - Use charcoal gradients for the page and graphite work panels. The video stage has a subtle radial light and vignette; caption selection and transport use restrained ice blue.
 - The header uses a translucent charcoal fill, fine light edge, blur, and inset highlight. The effect dialog and mobile inspector use floating glass materials; preserve readable text and a clear media canvas.
 - Use the native system sans-serif stack (`-apple-system`, BlinkMacSystemFont, Segoe UI). Headings, compact uppercase pane labels, muted supporting text, and clear form labels establish hierarchy. Interface icons are inline SVG; the app mark comes from the supplied asset.
-- Short transitions and caption effects signal focus, playback, panel entry, and effect previews. Keep them interruptible and avoid animating the whole workspace during routine edits. The effect library filters by treatment family, previews a selected treatment, and applies it explicitly to the globally styled caption track.
+- Motion personality is quiet and precise: 120 ms action feedback, roughly 220 ms disclosure changes, and a 340 ms sheet entrance with a faster exit. GSAP core is bundled locally and animates the canvas arrival, inspector sheet, foldouts, progress feedback, and delivery glass. Keep the preview and timeline central; do not choreograph all workspace panels. The effect library filters by treatment family, previews a selected treatment, and applies it explicitly to the globally styled caption track.
 - Type-on reveal follows Whisper word timestamps when available; imported captions without word-level timing fall back to cue-time character reveal.
 
 ## Accessibility and fallback behavior

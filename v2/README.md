@@ -51,5 +51,7 @@ The reachable `/api/health` and `/api/whisper/check` endpoints report detected V
 - `index.html`, `styles.css`, `v2-design.css`, `liquid-glass.css` — editor interface, glass materials and responsive styling.
 - `start.bat`, `requirements.txt` — Windows setup.
 - `V2_NOTES.md` — V1 audit, model research, and remaining work.
-- `DESIGN.md` — V2 visual system.
+- `DESIGN.md` — V2 visual system and motion rules.
+- `assets/gsap.min.js` — locally bundled GSAP core for offline-safe interface motion.
+- `THIRD_PARTY_NOTICES.md` — animation runtime attribution and license reference.
 - `AUDIO_MODELS.md` — local dubbing and speech-enhancement research.

@@ -53,7 +53,7 @@
   inspector.insertBefore(audioPanel, inspector.children[1] || null);
   const dubbingWorkspace = $('#dubbingWorkspace');
   dubbingWorkspace?.addEventListener('click', () => {
-    if (window.matchMedia('(max-width: 940px)').matches) { inspector.classList.add('v2-open'); inspectorToggle.setAttribute('aria-expanded', 'true'); }
+    if (window.matchMedia('(max-width: 940px)').matches) setInspectorOpen(true);
     expandSection(audioPanel);
     audioPanel.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
     $('#generateDub').focus({ preventScroll: true });
@@ -132,13 +132,39 @@
     gallery.close(); toast(`${pendingEffect.name} applied to all captions`);
   });
   const inspectorToggle = $('#inspectorToggle');
-  inspectorToggle.addEventListener('click', () => {
-    const open = inspector.classList.toggle('v2-open');
+  const inspectorBreakpoint = window.matchMedia('(max-width: 940px)');
+  function syncInspectorMotion() {
+    if (!inspectorBreakpoint.matches) {
+      inspector.inert = false;
+      window.gsap?.set(inspector, { clearProps: 'transform,opacity,visibility' });
+      return;
+    }
+    const open = inspector.classList.contains('v2-open');
+    inspector.inert = !open;
+    window.gsap?.set(inspector, { xPercent: open ? 0 : 104, autoAlpha: open ? 1 : 0 });
+  }
+  function setInspectorOpen(open) {
+    inspector.classList.toggle('v2-open', open);
     inspectorToggle.setAttribute('aria-expanded', String(open));
-  });
+    if (!inspectorBreakpoint.matches) { inspector.inert = false; return; }
+    if (open) inspector.inert = false;
+    if (window.gsap) {
+      const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : open ? .34 : .22;
+      window.gsap.to(inspector, {
+        xPercent: open ? 0 : 104, autoAlpha: open ? 1 : 0, duration,
+        ease: open ? 'power3.out' : 'power2.in', overwrite: 'auto',
+        onComplete: () => { if (!open) inspector.inert = true; }
+      });
+    } else {
+      inspector.inert = !open;
+    }
+  }
+  syncInspectorMotion();
+  inspectorBreakpoint.addEventListener('change', syncInspectorMotion);
+  inspectorToggle.addEventListener('click', () => setInspectorOpen(!inspector.classList.contains('v2-open')));
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && inspector.classList.contains('v2-open')) {
-      inspector.classList.remove('v2-open'); inspectorToggle.setAttribute('aria-expanded', 'false'); inspectorToggle.focus();
+      setInspectorOpen(false); inspectorToggle.focus();
     }
   });
   const translation = document.createElement('section');
@@ -161,9 +187,25 @@
     section.replaceChildren(toggle, content); section.dataset.foldReady = 'true';
     section.classList.toggle('is-collapsed', !expanded);
     toggle.addEventListener('click', () => {
-      const open = section.classList.toggle('is-collapsed') === false;
+      const open = section.classList.contains('is-collapsed');
       toggle.setAttribute('aria-expanded', String(open));
       toggle.setAttribute('aria-label', `${open ? 'Collapse' : 'Expand'} ${title}`);
+      if (!window.gsap || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        section.classList.toggle('is-collapsed', !open);
+        return;
+      }
+      if (open) {
+        section.classList.remove('is-collapsed');
+        window.gsap.fromTo(content, { height: 0, autoAlpha: 0 }, {
+          height: 'auto', autoAlpha: 1, duration: .24, ease: 'power3.out', overwrite: 'auto',
+          clearProps: 'height,opacity,visibility'
+        });
+      } else {
+        window.gsap.to(content, {
+          height: 0, autoAlpha: 0, duration: .17, ease: 'power2.in', overwrite: 'auto',
+          onComplete: () => { section.classList.add('is-collapsed'); window.gsap.set(content, { clearProps: 'height,opacity,visibility' }); }
+        });
+      }
     });
   }
   const foldSections = () => [...inspector.children].forEach((section, index) => foldSection(section, ['Selected caption','Video look'].includes(section.querySelector(':scope > h2')?.textContent.trim())));
@@ -171,9 +213,7 @@
   new MutationObserver(foldSections).observe(inspector, { childList: true });
   function expandSection(section) {
     const toggle = section?.querySelector(':scope > .section-fold-toggle');
-    if (!toggle) return;
-    section.classList.remove('is-collapsed'); toggle.setAttribute('aria-expanded','true');
-    toggle.setAttribute('aria-label',`Collapse ${toggle.textContent}`);
+    if (toggle?.getAttribute('aria-expanded') !== 'true') toggle?.click();
   }
 
   let lastPreviewId = null;

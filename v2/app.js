@@ -1,8 +1,8 @@
-const gsapReady=Promise.resolve(null),$=s=>document.querySelector(s),video=$('#video'),stage=$('#stage'),safe=$('#safeArea'),overlay=$('#subtitleOverlay');
+const $=s=>document.querySelector(s),video=$('#video'),stage=$('#stage'),safe=$('#safeArea'),overlay=$('#subtitleOverlay');
 const reducedMotion=()=>window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-function tween(target,vars){const g=window.gsap;if(!g)return null;const next={...vars,duration:reducedMotion()?0:(vars.duration??.5),overwrite:'auto'};return g.to(target,next)}
-function progressCue(el,value,pulse=true){if(!el)return;const pct=Math.max(0,Math.min(100,Number(value)||0));el.style.width='100%';el.style.transformOrigin='left center';const t=tween(el,{scaleX:pct/100,duration:.65,ease:'power3.out'});if(!t)el.style.transform=`scaleX(${pct/100})`;if(pulse&&pct>0&&pct<100&&window.gsap&&!reducedMotion()){window.gsap.to(el,{boxShadow:'0 0 22px rgba(246,184,94,.7)',duration:1.1,repeat:-1,yoyo:true,ease:'sine.inOut',overwrite:'auto'})}else if(window.gsap){window.gsap.killTweensOf(el,'boxShadow');el.style.boxShadow=pct>=100?'0 0 18px rgba(246,184,94,.42)':''}}
-function animateWorkspace(){const g=window.gsap;if(!g||reducedMotion())return;g.fromTo('.captions,.editor,.inspector',{autoAlpha:0,y:10},{autoAlpha:1,y:0,duration:.5,stagger:.08,ease:'power3.out',clearProps:'transform'});}
+function tween(target,vars={}){const g=window.gsap;if(!g||!target)return null;return g.to(target,{duration:reducedMotion()?0:(vars.duration??.22),ease:'power2.out',overwrite:'auto',...vars,duration:reducedMotion()?0:(vars.duration??.22)})}
+function progressCue(el,value){if(!el)return;const pct=Math.max(0,Math.min(100,Number(value)||0));el.style.width='100%';el.style.transformOrigin='left center';const animation=tween(el,{scaleX:pct/100,duration:.24,ease:'power2.out'});if(!animation)el.style.transform=`scaleX(${pct/100})`;el.style.boxShadow=pct>=100?'0 2px 12px #9bdcf44a':pct>0?'0 2px 8px #9bdcf422':''}
+function animateWorkspace(){const g=window.gsap;if(!g||reducedMotion())return;g.timeline({defaults:{ease:'power3.out'}}).fromTo('#stage',{autoAlpha:0,y:8,scale:.995},{autoAlpha:1,y:0,scale:1,duration:.26,clearProps:'transform'}).fromTo('.transport,#timeline',{autoAlpha:0,y:4},{autoAlpha:1,y:0,duration:.18,stagger:.04,clearProps:'transform'},'-.1')}
 const MODEL_CHOICES=[['tiny','Tiny · 75 MB'],['base','Base · 145 MB'],['small','Small · 480 MB'],['medium','Medium · 1.5 GB'],['large-v3','Large v3 · 3.1 GB'],['turbo','Turbo · 1.6 GB']];
 function modelPanel(){
   const inspector=$('.inspector'); if(!inspector||$('#modelPanel')) return;
@@ -24,8 +24,58 @@ setTimeout(deliveryPanel,720);
 function exportStyles(){if($('#exportSheetStyles'))return;const css=`body.export-open{overflow:hidden}.export-sheet{position:fixed;z-index:100;inset:0;display:grid;place-items:center;padding:22px}.export-scrim{position:absolute;inset:0;background:#03060bc7;backdrop-filter:blur(12px)}.export-card{position:relative;z-index:1;width:min(680px,100%);max-height:calc(100dvh - 44px);overflow:auto;padding:34px;border:1px solid #6c87a86b;border-radius:22px;background:linear-gradient(145deg,#182233,#111925 54%,#0d141f);box-shadow:0 28px 90px #0009;color:#f6f8fb}.export-close{position:absolute;top:18px;right:18px;width:34px;height:34px;border:1px solid #89a1c247;border-radius:10px;background:#090e177f;color:#c9d4e3;font-size:24px;cursor:pointer}.export-kicker{margin:0 0 10px;color:#ffb44a;font-size:10px;font-weight:800;letter-spacing:.16em}.export-card h1{max-width:520px;margin:0;color:#fff;font-size:clamp(27px,4vw,38px);line-height:1.05;letter-spacing:-.045em}.export-intro{max-width:520px;margin:13px 0 25px;color:#99aabd;font-size:14px;line-height:1.55}.export-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.export-choice{position:relative;min-height:165px;padding:19px;border:1px solid #859dbd3d;border-radius:15px;background:#050a126b;color:#e9f0f8;text-align:left;cursor:pointer;transition:transform .18s ease,border-color .18s ease,background .18s ease}.export-choice:hover{transform:translateY(-2px);border-color:#ffb74985;background:#161e2beb}.export-choice.active{border-color:#ffb449;background:linear-gradient(145deg,#ffb34629,#ffb3460b);box-shadow:0 0 0 1px #ffb44926 inset}.export-choice.active:after{content:'✓';position:absolute;right:14px;top:13px;display:grid;place-items:center;width:21px;height:21px;border-radius:50%;background:#ffb449;color:#182030;font-size:13px;font-weight:900}.export-choice strong,.export-choice span,.export-choice em{display:block}.export-choice strong{padding-right:24px;font-size:15px}.export-choice span{margin-top:9px;color:#9eb0c4;font-size:12px;line-height:1.45}.export-choice em{position:absolute;bottom:17px;color:#ffc56f;font-size:10px;font-style:normal;font-weight:750;letter-spacing:.045em;text-transform:uppercase}.export-summary{display:flex;justify-content:space-between;gap:16px;margin:16px 0 20px;padding:13px 15px;border:1px solid #7d96b433;border-radius:11px;background:#0409104d;color:#90a1b5;font-size:12px}.export-summary strong{color:#dce7f3;font-weight:650;text-transform:capitalize}.export-actions{display:flex;gap:11px}.export-confirm{flex:1;min-height:48px;border:0;border-radius:11px;background:#ffb449;color:#1a1e25;font-weight:800;cursor:pointer;box-shadow:0 8px 18px #ffa8342e}.export-confirm:disabled{cursor:wait;opacity:.7}.export-cancel{min-height:48px;padding:0 17px;border:1px solid #8fa5c344;border-radius:11px;background:transparent;color:#b8c8d9;font-weight:700;cursor:pointer}.export-fine{margin:13px 0 0;color:#74869c;font-size:11px;line-height:1.4}.export-render{margin-top:19px;padding:14px;border:1px solid #ffb44942;border-radius:12px;background:#ffb44912}.export-render[hidden]{display:none}.export-render-top{display:flex;justify-content:space-between;gap:12px;color:#eaf2fa;font-size:12px;font-weight:700}.export-render-top span:last-child{color:#ffc365}.export-rail{height:5px;margin-top:11px;overflow:hidden;border-radius:99px;background:#fff2}.export-rail i{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#ffb449,#ffd58d);}@media(max-width:600px){.export-sheet{align-items:end;padding:10px}.export-card{max-height:calc(100dvh - 20px);padding:28px 20px 20px;border-radius:20px}.export-choices{grid-template-columns:1fr}.export-choice{min-height:136px}.export-actions{flex-direction:column}.export-confirm,.export-cancel{width:100%}}`;const tag=document.createElement('style');tag.id='exportSheetStyles';tag.textContent=css;document.head.append(tag)}
 function exportSheet(){if($('#exportSheet'))return;exportStyles();const sheet=document.createElement('div');sheet.id='exportSheet';sheet.className='export-sheet';sheet.hidden=true;sheet.innerHTML='<div class="export-scrim"></div><section class="export-card" role="dialog" aria-modal="true" aria-labelledby="exportTitle"><button class="export-close" aria-label="Close delivery center">×</button><p class="export-kicker">DELIVERY CENTER</p><h1 id="exportTitle">Finish your captioned video.</h1><p class="export-intro">Choose how you want to hand off this project. Your captions never leave this computer.</p><div class="export-choices"><button class="export-choice active" data-export-mode="burn"><strong>Burn into video</strong><span>Creates an MP4 with captions permanently visible.</span><em>Best for social & sharing</em></button><button class="export-choice" data-export-mode="file"><strong>Export caption file</strong><span>Downloads an editable SRT with your timing and text.</span><em>Best for another editor</em></button></div><div class="export-summary"><span>Current style</span><strong id="exportStyleSummary">Inter · 42px · bottom</strong></div><div id="exportRender" class="export-render" hidden><div class="export-render-top"><span id="exportRenderStage">Preparing local render</span><span id="exportRenderPercent">0%</span></div><div class="export-rail"><i id="exportRail"></i></div></div><div class="export-actions"><button id="exportConfirm" class="export-confirm">Burn captions to MP4</button><button id="exportCancel" class="export-cancel">Keep editing</button></div><p id="exportFine" class="export-fine">Your original video is untouched. A new MP4 is rendered locally.</p></section>';document.body.append(sheet);sheet.querySelector('.export-close').onclick=closeExportSheet;sheet.querySelector('.export-scrim').onclick=closeExportSheet;$('#exportCancel').onclick=closeExportSheet;sheet.querySelectorAll('[data-export-mode]').forEach(b=>b.onclick=()=>setExportMode(b.dataset.exportMode));$('#exportConfirm').onclick=()=>{const mode=$('#exportSheet').dataset.mode;if(mode==='burn')burnCaptions(true);else{closeExportSheet();downloadSrt()}}}
 function setExportMode(mode){const sheet=$('#exportSheet');if(!sheet)return;sheet.dataset.mode=mode;sheet.querySelectorAll('[data-export-mode]').forEach(b=>b.classList.toggle('active',b.dataset.exportMode===mode));$('#exportConfirm').textContent=mode==='burn'?'Burn captions to MP4':'Download SRT caption file';$('#exportFine').textContent=mode==='burn'?'Your original video is untouched. A new MP4 is rendered locally.':'The SRT stays editable and can be opened in most video editors.';if(mode==='file')$('#exportRender').hidden=true}
-function openExportSheet(mode='burn'){exportSheet();const sheet=$('#exportSheet');const pos=document.querySelector('[data-position].active')?.dataset.position||'bottom';$('#exportStyleSummary').textContent=`${state.style.font} · ${state.style.size}px · ${pos}`;$('#exportRender').hidden=true;$('#exportConfirm').disabled=false;$('#exportCancel').disabled=false;setExportMode(mode);sheet.hidden=false;tween(sheet.querySelector('.export-card'),{y:0,autoAlpha:1,duration:.38,ease:'power3.out'});document.body.classList.add('export-open');sheet.querySelector('.export-close').focus()}
-function closeExportSheet(){const sheet=$('#exportSheet');if(!sheet||sheet.hidden)return;const finish=()=>{sheet.hidden=true;document.body.classList.remove('export-open')};if(window.gsap&&!reducedMotion())window.gsap.to(sheet.querySelector('.export-card'),{y:16,autoAlpha:0,duration:.2,ease:'power2.in',onComplete:finish});else finish()}
+let exportOpener = null;
+function openExportSheet(mode='burn') {
+  exportSheet();
+  const sheet = $('#exportSheet');
+  const pos = document.querySelector('[data-position].active')?.dataset.position || 'bottom';
+  exportOpener = document.activeElement;
+  $('#exportStyleSummary').textContent = `${state.style.font} · ${state.style.size}px · ${pos}`;
+  $('#exportRender').hidden = true;
+  $('#exportConfirm').disabled = false;
+  $('#exportCancel').disabled = false;
+  setExportMode(mode);
+  sheet.hidden = false;
+  document.body.classList.add('export-open');
+  $('#appShell').inert = true;
+  const card = sheet.querySelector('.export-card');
+  const scrim = sheet.querySelector('.export-scrim');
+  if (!sheet.dataset.keyboardReady) {
+    sheet.addEventListener('keydown', event => {
+      if (event.key === 'Escape') { event.preventDefault(); closeExportSheet(); return; }
+      if (event.key !== 'Tab') return;
+      const focusable = [...sheet.querySelectorAll('button:not(:disabled):not([hidden]),select:not(:disabled),a[href],input:not(:disabled)')].filter(el => el.getClientRects().length);
+      if (!focusable.length) return;
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    });
+    sheet.dataset.keyboardReady = 'true';
+  }
+  if (window.gsap && !reducedMotion()) {
+    window.gsap.fromTo(scrim, { autoAlpha: 0 }, { autoAlpha: 1, duration: .22, ease: 'power2.out', overwrite: 'auto' });
+    window.gsap.fromTo(card, { autoAlpha: 0, y: 12, scale: .985, filter: 'blur(5px)' }, { autoAlpha: 1, y: 0, scale: 1, filter: 'blur(0px)', duration: .3, ease: 'power3.out', clearProps: 'transform,filter', overwrite: 'auto' });
+  } else {
+    if (window.gsap) window.gsap.set([scrim, card], { clearProps: 'all' });
+  }
+  sheet.querySelector('.export-close').focus();
+}
+function closeExportSheet() {
+  const sheet = $('#exportSheet');
+  if (!sheet || sheet.hidden) return;
+  const finish = () => {
+    sheet.hidden = true;
+    document.body.classList.remove('export-open');
+    $('#appShell').inert = false;
+    if (exportOpener?.isConnected) exportOpener.focus();
+    exportOpener = null;
+  };
+  if (window.gsap && !reducedMotion()) {
+    const timeline = window.gsap.timeline({ onComplete: finish, defaults: { overwrite: 'auto' } });
+    timeline.to(sheet.querySelector('.export-card'), { y: 8, scale: .99, autoAlpha: 0, filter: 'blur(3px)', duration: .16, ease: 'power2.in', clearProps: 'transform,filter' }, 0)
+      .to(sheet.querySelector('.export-scrim'), { autoAlpha: 0, duration: .14, ease: 'power2.in' }, 0);
+  } else finish();
+}
 setTimeout(exportSheet,730);
 const demo=[{id:1,start:0,end:2.7,text:'Stories deserve to be seen.'},{id:2,start:3.1,end:6.2,text:'Build captions that move with your ideas.'},{id:3,start:6.7,end:9.4,text:'Place them exactly where they belong.'}];
 const fmt=t=>{t=Math.max(0,+t||0);return`${String(Math.floor(t/60)).padStart(2,'0')}:${(t%60).toFixed(1).padStart(4,'0')}`};const dur=()=>Number.isFinite(video.duration)?video.duration:Math.max(10,...state.captions.map(c=>c.end));
