@@ -1,0 +1,6 @@
+/.impeccable
+/.venv
+/data
+/logs/
+/__pycache__/
+*.py[cod]
