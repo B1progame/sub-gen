@@ -60,18 +60,26 @@
     }));
   }
   populateGallery();
-  $('#openEffectGallery').addEventListener('click', () => gallery.showModal());
+  function previewEffect(item) {
+    pendingEffect = item;
+    populateGallery(effectSearch.value);
+    $('#effectPreviewName').textContent = item.name; $('#effectPreviewNote').textContent = item.note;
+    const preview = $('#effectPreviewText'); preview.className = `fx-${item.motion}`; preview.dataset.emphasis = item.accent;
+    preview.style.setProperty('--caption-highlight', style.highlight);
+    $('#applyEffectAll').disabled = false;
+  }
+  $('#openEffectGallery').addEventListener('click', () => {
+    const activeEffect = catalog.find(item => item.motion === (style.effect || 'static') && item.accent === (style.emphasis || 'color'));
+    if (activeEffect) previewEffect(activeEffect);
+    gallery.showModal();
+  });
   $('#closeEffectGallery').addEventListener('click', () => gallery.close());
   effectSearch.addEventListener('input', () => populateGallery(effectSearch.value));
   effectCategory.addEventListener('change', () => populateGallery(effectSearch.value));
   grid.addEventListener('click', event => {
     const button = event.target.closest('.effect-card'); if (!button) return;
-    pendingEffect = catalog.find(item => item.motion === button.dataset.motion && item.accent === button.dataset.accent);
-    populateGallery(effectSearch.value);
-    $('#effectPreviewName').textContent = pendingEffect.name; $('#effectPreviewNote').textContent = pendingEffect.note;
-    const preview = $('#effectPreviewText'); preview.className = `fx-${pendingEffect.motion}`; preview.dataset.emphasis = pendingEffect.accent;
-    preview.style.setProperty('--caption-highlight', style.highlight);
-    $('#applyEffectAll').disabled = false;
+    const selectedEffect = catalog.find(item => item.motion === button.dataset.motion && item.accent === button.dataset.accent);
+    if (selectedEffect) previewEffect(selectedEffect);
   });
   $('#applyEffectAll').addEventListener('click', () => {
     if (!pendingEffect) return;
