@@ -41,19 +41,21 @@
   const gallery = document.createElement('dialog');
   gallery.className = 'effect-gallery';
   gallery.setAttribute('aria-labelledby', 'effectGalleryTitle');
-  gallery.innerHTML = '<header class="gallery-head"><div><h2 id="effectGalleryTitle">Caption effects</h2><p>90 motion and word treatments. Select any combination to preview it.</p></div><button type="button" class="ghost" id="closeEffectGallery" aria-label="Close effect library">Close</button></header><label class="gallery-search">Search effects<input id="effectSearch" type="search" placeholder="Try “marker” or “spring”"></label><div class="gallery-count" id="effectCount" aria-live="polite"></div><div class="gallery-grid" id="effectGrid"></div>';
+  gallery.innerHTML = '<header class="gallery-head"><div><h2 id="effectGalleryTitle">Caption effects</h2><p>Choose a category, preview a treatment, then apply it across this project.</p></div><button type="button" class="ghost" id="closeEffectGallery" aria-label="Close effect library">Close</button></header><div class="gallery-controls"><label>Effect family<select id="effectCategory"><option value="all">All effects</option><option value="words">Word-synced</option><option value="entrance">Entrance</option><option value="reveal">Reveal</option><option value="clean">Clean captions</option></select></label><label class="gallery-search">Search<input id="effectSearch" type="search" placeholder="Try marker, spring, or glow"></label></div><div class="gallery-count" id="effectCount" aria-live="polite"></div><div class="gallery-body"><div class="gallery-grid" id="effectGrid"></div><aside class="effect-preview"><span class="preview-label">LIVE PREVIEW</span><div class="preview-stage"><span id="effectPreviewText">Stories deserve to be seen.</span></div><strong id="effectPreviewName">Choose an effect</strong><p id="effectPreviewNote">Your caption treatment will be previewed here.</p><button type="button" class="action" id="applyEffectAll" disabled>Apply to all captions</button><p class="apply-note">Effects are shared with every caption and the exported subtitle track.</p></aside></div>';
   document.body.append(gallery);
   const catalog = window.CAPTION_EFFECT_CATALOG || [];
-  const grid = $('#effectGrid', gallery), effectSearch = $('#effectSearch', gallery), effectCount = $('#effectCount', gallery);
+  const grid = $('#effectGrid', gallery), effectSearch = $('#effectSearch', gallery), effectCount = $('#effectCount', gallery), effectCategory = $('#effectCategory', gallery);
+  let pendingEffect = null;
+  const family = motion => ['karaoke', 'pop'].includes(motion) ? 'words' : ['fade', 'slide', 'bounce', 'zoom', 'blur'].includes(motion) ? 'entrance' : motion === 'wipe' || motion === 'typewriter' ? 'reveal' : 'clean';
   function populateGallery(query = '') {
     const normalized = query.trim().toLowerCase();
-    const filtered = catalog.filter(item => `${item.name} ${item.note}`.toLowerCase().includes(normalized));
+    const filtered = catalog.filter(item => (effectCategory.value === 'all' || family(item.motion) === effectCategory.value) && `${item.name} ${item.note}`.toLowerCase().includes(normalized));
     effectCount.textContent = `${filtered.length} of ${catalog.length} combinations`;
     grid.replaceChildren(...filtered.map(item => {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'effect-card';
-      button.dataset.motion = item.motion; button.dataset.accent = item.accent;
+      button.dataset.motion = item.motion; button.dataset.accent = item.accent; button.setAttribute('aria-pressed', String(pendingEffect?.id === item.id));
       const accentClass = `fx-word current emphasis-${item.accent}${item.accent === 'marker' ? ' marker' : ''}${item.accent === 'underline' ? ' underline' : ''}${item.accent === 'color-scale' ? ' scale' : ''}`;
-      button.innerHTML = `<span class="effect-card-swatch fx-${item.motion}" style="--caption-highlight:#8be2f2" aria-hidden="true"><i class="effect-swatch-word ${accentClass}">Caption</i><i class="effect-swatch-bar"></i></span><strong>${safeText(item.name)}</strong><small>${safeText(item.note)}</small>`;
+      button.innerHTML = `<span class="effect-card-swatch" style="--caption-highlight:#9bdcf4" aria-hidden="true"><i class="effect-swatch-word ${accentClass}">Caption</i></span><strong>${safeText(item.name)}</strong><small>${safeText(item.note)}</small>`;
       return button;
     }));
   }
@@ -61,12 +63,22 @@
   $('#openEffectGallery').addEventListener('click', () => gallery.showModal());
   $('#closeEffectGallery').addEventListener('click', () => gallery.close());
   effectSearch.addEventListener('input', () => populateGallery(effectSearch.value));
+  effectCategory.addEventListener('change', () => populateGallery(effectSearch.value));
   grid.addEventListener('click', event => {
     const button = event.target.closest('.effect-card'); if (!button) return;
-    $('#captionEffect').value = button.dataset.motion; $('#wordEmphasis').value = button.dataset.accent;
+    pendingEffect = catalog.find(item => item.motion === button.dataset.motion && item.accent === button.dataset.accent);
+    populateGallery(effectSearch.value);
+    $('#effectPreviewName').textContent = pendingEffect.name; $('#effectPreviewNote').textContent = pendingEffect.note;
+    const preview = $('#effectPreviewText'); preview.className = `fx-${pendingEffect.motion}`; preview.dataset.emphasis = pendingEffect.accent;
+    preview.style.setProperty('--caption-highlight', style.highlight);
+    $('#applyEffectAll').disabled = false;
+  });
+  $('#applyEffectAll').addEventListener('click', () => {
+    if (!pendingEffect) return;
+    $('#captionEffect').value = pendingEffect.motion; $('#wordEmphasis').value = pendingEffect.accent;
     $('#captionEffect').dispatchEvent(new Event('change', { bubbles: true }));
     $('#wordEmphasis').dispatchEvent(new Event('change', { bubbles: true }));
-    gallery.close(); toast(`${button.querySelector('strong').textContent} applied`);
+    gallery.close(); toast(`${pendingEffect.name} applied to all captions`);
   });
   const inspectorToggle = $('#inspectorToggle');
   inspectorToggle.addEventListener('click', () => {
@@ -147,9 +159,14 @@
     const now = Number(video.currentTime) || 0;
     const current = words.findIndex(word => now >= Number(word.start) && now <= Number(word.end));
     if (effect === 'typewriter' && !reduced) {
-      const fraction = Math.max(0, Math.min(1, (now - caption.start) / Math.max(.1, caption.end - caption.start)));
-      const count = Math.ceil(caption.text.length * fraction);
-      overlay.textContent = caption.text.slice(0, count);
+      if (words.length) {
+        overlay.innerHTML = words.map(word => now >= Number(word.start) ? safeText(word.word || word.text || '') : '').filter(Boolean).join(' ');
+        overlay.classList.toggle('has-spoken-word', current >= 0);
+      } else {
+        const fraction = Math.max(0, Math.min(1, (now - caption.start) / Math.max(.1, caption.end - caption.start)));
+        const count = Math.ceil(caption.text.length * fraction);
+        overlay.textContent = caption.text.slice(0, count);
+      }
     } else if (words.length > 0 && !reduced) {
       overlay.innerHTML = words.map((word, index) => `<span class="fx-word${index === current ? ` current emphasis-${style.emphasis}` : ''}${style.emphasis === 'marker' && index === current ? ' marker' : ''}${style.emphasis === 'underline' && index === current ? ' underline' : ''}${style.emphasis === 'color-scale' && index === current ? ' scale' : ''}">${safeText(word.word || word.text || '')}</span>`).join(' ');
     } else overlay.textContent = caption.text;
@@ -333,3 +350,4 @@
     } catch {}
   }, 1100);
 })();
+
